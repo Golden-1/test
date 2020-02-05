@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd 
+	http://www.springframework.org/schema/mvc 
+	http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd 
+	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context/spring-context-4.0.xsd 
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-4.0.xsd 
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx-4.0.xsd ">							
+	
+	<!-- 开启注解扫描器 -->
+	<context:component-scan base-package="golden"/>
+	
+	<!-- 配置数据源  -->
+	<!-- 如果自己写，要改这里 ，注入会话工厂-->
+	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="com.mysql.jdbc.Driver"></property>
+		<property name="url" value="jdbc:mysql://localhost:3306/practice"></property>
+		<property name="username" value="root"></property>
+		<property name="password" value="root"></property>
+	</bean>
+	
+	<!-- 配置会话工厂 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<!-- 注入数据源 -->
+		<property name="dataSource" ref="dataSource"></property>
+		<!-- 加载mybatis的配置文件 -->
+		<property name="configLocation" value="classpath:sqlMapConfig.xml"></property>
+	</bean>
+	
+	
+	<!-- 配置事务管理器-->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	 
+	<!-- 配置事务相关的通知，即对那些方法自动开启事务和提交事务 -->
+	<!-- 如果自己写，要改这里 -->
+	<tx:advice id="txAdvice" transaction-manager="txManager">
+		<tx:attributes>
+			<tx:method name="save*" propagation="REQUIRED"/>
+			<tx:method name="update*" propagation="REQUIRED"/>
+			<tx:method name="delete*" propagation="REQUIRED"/>
+			<tx:method name="select*" read-only="true"/>
+		</tx:attributes>
+	</tx:advice>
+	
+	<!-- 配置切面 -->
+	<aop:config>
+		<!-- 如果自己写，要改这里 --><!-- 切面编程，拦截到之后执行前开事务，之后提交事务，并指定方法所在层 -->
+		<aop:advisor advice-ref="txAdvice" pointcut="execution(* golden.service..*.*(..))"/>
+	</aop:config>
+	
+</beans>
